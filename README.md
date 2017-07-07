@@ -1,7 +1,7 @@
 # GPUEnablerDocker
 Docker Files to use GPUEnabler from jupyter/Zeppelin
 
-### NOTE: GPUEnabler jar's are taken from https://github.com/IBMSparkGPU/GPUEnabler.git and compiled the source. 
+**NOTE: GPUEnabler jar's** are taken from https://github.com/IBMSparkGPU/GPUEnabler.git and compiled the source. 
 
 ## Build the juypter image
 ```

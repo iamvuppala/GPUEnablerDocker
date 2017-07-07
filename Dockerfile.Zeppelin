@@ -70,21 +70,6 @@ RUN jupyter toree install --spark_home=/usr/bin/spark/ --interpreters=Scala,PySp
 
 COPY gpu-enabler_2.11-1.0.0.jar gpu-enabler-examples_2.11-1.0.0.jar /usr/bin/spark/jars/
 
-#ENV NB_USER testuser
-#ENV NB_UID 1000
-#ENV HOME /home/$NB_USER
-#ENV LC_ALL en_US.UTF-8
-#ENV LANG en_US.UTF-8
-#ENV LANGUAGE en_US.UTF-8
-
-#RUN useradd -m -s /bin/bash -N -u $NB_UID $NB_USER  
-
-#RUN mkdir $HOME/GPUEnabler 
-
-#USER $NB_USER
-#WORKDIR $HOME/GPUEnabler/
-#CMD jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --NotebookApp.token='' $@
-
 RUN pip install pandasql 
 
 # Zeppelin

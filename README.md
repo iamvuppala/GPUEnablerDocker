@@ -7,7 +7,7 @@ Docker Files to use GPUEnabler from jupyter/Zeppelin
 ```
 $ git clone https://github.com/iamvuppala/GPUEnablerDocker.git
 $ cd GPUEnablerDocker
-$ docker build -t <jupyter_image_name> -f Dockerfile.juypter . 
+$ docker build -t <jupyter_image_name> -f Dockerfile.jupyter . 
 ```
 
 ## Build the Zeppelin image

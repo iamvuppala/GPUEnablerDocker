@@ -1,0 +1,128 @@
+FROM nvidia/cuda-ppc64le:8.0-cudnn5-devel-ubuntu16.04
+
+MAINTAINER Sai Prasanth Vuppala <vuppalaprasanth@in.ibm.com>
+
+RUN apt-get update && apt-get install -y \
+        autoconf \
+        libtool \
+        build-essential \
+        curl \
+        git \
+        libfreetype6-dev \
+        libpng12-dev \
+        libzmq3-dev \
+        pkg-config \
+        python-dev \
+        python-numpy \
+        python-pip \
+        software-properties-common \
+        swig \
+        zip \
+        zlib1g-dev \
+        libcurl3-dev \
+        openjdk-8-jdk \
+        openjdk-8-jre-headless \
+        libblas-dev \
+        liblapack-dev \
+        libatlas-base-dev \
+        gfortran \
+        maven \
+        wget \
+        && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN update-ca-certificates -f
+
+RUN curl -fSsL -O https://bootstrap.pypa.io/get-pip.py && \
+    python get-pip.py && \
+    rm get-pip.py
+
+RUN pip install grpcio
+
+COPY toree-0.2.0.dev1.tar.gz .
+
+RUN pip --no-cache-dir install \
+        ipykernel \
+        jupyter \
+        matplotlib \
+        numpy \
+        scipy \
+        sklearn \
+        pandas \
+        toree-0.2.0.dev1.tar.gz \
+        && \
+python -m ipykernel.kernelspec
+
+RUN mkdir GPUEnabler
+WORKDIR GPUEnabler/
+
+RUN curl -fSsL -O http://www-us.apache.org/dist/spark/spark-2.1.1/spark-2.1.1-bin-hadoop2.7.tgz &&\
+    tar -xzf spark-2.1.1-bin-hadoop2.7.tgz && \
+    mv spark-2.1.1-bin-hadoop2.7 /usr/bin/spark
+
+ENV SPARK_HOME /usr/bin/spark
+ENV PYTHONPATH $SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-0.10.1-src.zip
+ENV R_LIBS_USER $SPARK_HOME/R/lib
+ENV PATH $PATH:/usr/bin/spark/bin
+
+RUN jupyter toree install --spark_home=/usr/bin/spark/ --interpreters=Scala,PySpark,SparkR,SQL
+
+COPY gpu-enabler_2.11-1.0.0.jar gpu-enabler-examples_2.11-1.0.0.jar /usr/bin/spark/jars/
+
+#ENV NB_USER testuser
+#ENV NB_UID 1000
+#ENV HOME /home/$NB_USER
+#ENV LC_ALL en_US.UTF-8
+#ENV LANG en_US.UTF-8
+#ENV LANGUAGE en_US.UTF-8
+
+#RUN useradd -m -s /bin/bash -N -u $NB_UID $NB_USER  
+
+#RUN mkdir $HOME/GPUEnabler 
+
+#USER $NB_USER
+#WORKDIR $HOME/GPUEnabler/
+#CMD jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --NotebookApp.token='' $@
+
+RUN pip install pandasql 
+
+# Zeppelin
+ENV ZEPPELIN_PORT 8888
+ENV ZEPPELIN_HOME /usr/zeppelin
+ENV ZEPPELIN_CONF_DIR $ZEPPELIN_HOME/conf
+ENV ZEPPELIN_NOTEBOOK_DIR $ZEPPELIN_HOME/notebook
+ENV ZEPPELIN_COMMIT v0.7.1
+RUN echo '{ "allow_root": true }' > /root/.bowerrc
+RUN set -ex \
+ && buildDeps=' \
+    git \
+    bzip2 \
+    npm \
+ ' \
+ && apt-get update && apt-get install -y --no-install-recommends $buildDeps \
+ && curl -sL http://archive.apache.org/dist/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz \
+   | gunzip \
+   | tar x -C /tmp/ \
+ && git clone https://github.com/apache/zeppelin.git /usr/src/zeppelin \
+ && cd /usr/src/zeppelin \
+ && git checkout -q $ZEPPELIN_COMMIT \
+ && dev/change_scala_version.sh "2.11" \
+ && MAVEN_OPTS="-Xmx2g -XX:MaxPermSize=1024m" /tmp/apache-maven-3.3.9/bin/mvn --batch-mode package -DskipTests -Pscala-2.11 -Pbuild-distr \
+  -pl 'zeppelin-interpreter,zeppelin-zengine,zeppelin-display,spark-dependencies,spark,markdown,angular,shell,hbase,postgresql,jdbc,python,elasticsearch,zeppelin-web,zeppelin-server,zeppelin-distribution' \
+ && tar xvf /usr/src/zeppelin/zeppelin-distribution/target/zeppelin*.tar.gz -C /usr/ \
+ && mv /usr/zeppelin* $ZEPPELIN_HOME \
+ && mkdir -p $ZEPPELIN_HOME/logs \
+ && mkdir -p $ZEPPELIN_HOME/run \
+ && apt-get purge -y --auto-remove $buildDeps \
+ && rm -rf /var/lib/apt/lists/* \
+ && rm -rf /usr/src/zeppelin \
+ && rm -rf /root/.m2 \
+ && rm -rf /root/.npm \
+ && rm -rf /tmp/*
+
+RUN ln -s /usr/bin/pip3 /usr/bin/pip 
+
+ADD about.json $ZEPPELIN_NOTEBOOK_DIR/2BTRWA9EV/note.json
+WORKDIR $ZEPPELIN_HOME
+CMD ["bin/zeppelin.sh"]

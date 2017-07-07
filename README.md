@@ -21,8 +21,10 @@ $ docker build -t <Zeppelin_image_name> -f Dockerfile.Zeppelin .
 ```
  $ docker run -it --rm -p 9999:9999 <jupyter_image_name>
 ```
+You can access the jupyter daemon from browser using: http://<ip>:9999
 
 ## Running Zeppelin image
 ```
- $ docker run -it --rm -p 9999:9999 <Zeppelin_image_name>
+ $ docker run -it --rm -p 8888:8888 <Zeppelin_image_name>
 ```
+You can access the Zeppelin daemon from browser using: http://<ip>:8888

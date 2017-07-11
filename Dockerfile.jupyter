@@ -42,6 +42,9 @@ RUN pip install grpcio
 
 COPY toree-0.2.0.dev1.tar.gz .
 
+RUN apt-get update
+RUN apt-get -y install octave  less
+
 RUN pip --no-cache-dir install \
         ipykernel \
         jupyter \
@@ -51,8 +54,9 @@ RUN pip --no-cache-dir install \
         sklearn \
         pandas \
         toree-0.2.0.dev1.tar.gz \
+        octave_kernel\
         && \
-python -m ipykernel.kernelspec
+ python -m ipykernel.kernelspec
 
 RUN mkdir GPUEnabler
 WORKDIR GPUEnabler/
@@ -66,6 +70,8 @@ ENV PYTHONPATH $SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-0.10.1-src.zip
 ENV R_LIBS_USER $SPARK_HOME/R/lib
 ENV PATH $PATH:/usr/bin/spark/bin
 
+RUN python -m octave_kernel.install
+COPY spark-defaults.conf /usr/bin/spark/conf/
 RUN jupyter toree install --spark_home=/usr/bin/spark/ --interpreters=Scala,PySpark,SparkR,SQL
 
 COPY gpu-enabler_2.11-1.0.0.jar gpu-enabler-examples_2.11-1.0.0.jar /usr/bin/spark/jars/
@@ -82,5 +88,7 @@ RUN useradd -m -s /bin/bash -N -u $NB_UID $NB_USER
 RUN mkdir $HOME/GPUEnabler 
 
 USER $NB_USER
-WORKDIR $HOME/GPUEnabler/
-CMD jupyter notebook --ip=0.0.0.0 --port=9999 --no-browser --NotebookApp.token='' $@
+RUN mkdir $HOME/GPUEnabler/Resources/
+WORKDIR $HOME/GPUEnabler/Resources/
+ENV LD_LIBRARY_PATH /usr/lib/nvidia-361/
+CMD jupyter notebook --ip=0.0.0.0 --port=10001 --no-browser --NotebookApp.token='' --NotebookApp.iopub_data_rate_limit=10000000000 $@

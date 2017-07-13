@@ -2,6 +2,8 @@ FROM nvidia/cuda-ppc64le:8.0-cudnn5-devel-ubuntu16.04
 
 MAINTAINER Sai Prasanth Vuppala <vuppalaprasanth@in.ibm.com>
 
+#install basic packages
+
 RUN apt-get update && apt-get install -y \
         autoconf \
         libtool \
@@ -28,6 +30,11 @@ RUN apt-get update && apt-get install -y \
         gfortran \
         maven \
         wget \
+        vim \
+        sudo \
+        apt-utils \
+        octave \
+        less \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -40,11 +47,13 @@ RUN curl -fSsL -O https://bootstrap.pypa.io/get-pip.py && \
 
 RUN pip install grpcio
 
+RUN mkdir GPUEnabler
+WORKDIR GPUEnabler/
+
+#using apache toree Dev vesion because this is compatible with spark 2.1.1
 COPY toree-0.2.0.dev1.tar.gz .
 
-RUN apt-get update
-RUN apt-get -y install octave  less
-
+#install required softwares/kernels
 RUN pip --no-cache-dir install \
         ipykernel \
         jupyter \
@@ -56,38 +65,41 @@ RUN pip --no-cache-dir install \
         toree-0.2.0.dev1.tar.gz \
         octave_kernel\
         && \
- python -m ipykernel.kernelspec
+ python -m ipykernel.kernelspec \
+ && \
+ python -m octave_kernel.install
 
-RUN mkdir GPUEnabler
-WORKDIR GPUEnabler/
+#copying GPUEnabler jars
+COPY gpu-enabler_2.11-1.0.0.jar gpu-enabler-examples_2.11-1.0.0.jar /usr/bin/spark/jars/
 
+#copying nvidia driver local repo
+COPY nvidia-driver-local-repo-ubuntu1604_375.66-1_ppc64el.deb /GPUEnabler/
+
+RUN dpkg -i nvidia-driver-local-repo-ubuntu1604_375.66-1_ppc64el.deb
+
+#installting cuda
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    initramfs-tools \
+    cuda-runtime-8.0 \
+    cuda
+
+#installing spark
 RUN curl -fSsL -O http://www-us.apache.org/dist/spark/spark-2.1.1/spark-2.1.1-bin-hadoop2.7.tgz &&\
     tar -xzf spark-2.1.1-bin-hadoop2.7.tgz && \
     mv spark-2.1.1-bin-hadoop2.7 /usr/bin/spark
 
+#setting spark env
 ENV SPARK_HOME /usr/bin/spark
 ENV PYTHONPATH $SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-0.10.1-src.zip
 ENV R_LIBS_USER $SPARK_HOME/R/lib
 ENV PATH $PATH:/usr/bin/spark/bin
 
-RUN python -m octave_kernel.install
 COPY spark-defaults.conf /usr/bin/spark/conf/
+
+#Installing apache toree
 RUN jupyter toree install --spark_home=/usr/bin/spark/ --interpreters=Scala,PySpark,SparkR,SQL
 
 COPY gpu-enabler_2.11-1.0.0.jar gpu-enabler-examples_2.11-1.0.0.jar /usr/bin/spark/jars/
-
-COPY nvidia-driver-local-repo-ubuntu1604_375.66-1_ppc64el.deb /GPUEnabler/
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    vim \
-    sudo \
-    apt-utils
-
-RUN dpkg -i nvidia-driver-local-repo-ubuntu1604_375.66-1_ppc64el.deb
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    initramfs-tools \
-    cuda-runtime-8.0 \
-    cuda
 
 ENV NB_USER testuser
 ENV NB_UID 1000
@@ -96,13 +108,20 @@ ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
+#creating testuser and adding sudo
 RUN useradd -m -s /bin/bash -N -u $NB_UID $NB_USER
 RUN usermod -aG sudo $NB_USER
 
 RUN mkdir $HOME/GPUEnabler
 
+#switching to testuser and setting up env
 USER $NB_USER
+ENV LC_ALL en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US.UTF-8
 RUN mkdir $HOME/GPUEnabler/Resources/
 WORKDIR $HOME/GPUEnabler/Resources/
 ENV LD_LIBRARY_PATH /usr/lib/nvidia-361/
+
+#Run jupyter on port 10001
 CMD jupyter notebook --ip=0.0.0.0 --port=10001 --no-browser --NotebookApp.token='' --NotebookApp.iopub_data_rate_limit=10000000000 $@

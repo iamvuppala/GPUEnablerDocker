@@ -86,7 +86,9 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 #installing spark
 RUN curl -fSsL -O http://www-us.apache.org/dist/spark/spark-2.1.1/spark-2.1.1-bin-hadoop2.7.tgz &&\
     tar -xzf spark-2.1.1-bin-hadoop2.7.tgz && \
-    mv spark-2.1.1-bin-hadoop2.7 /usr/bin/spark
+    mv spark-2.1.1-bin-hadoop2.7 spark && \
+    rm -rf /usr/bin/spark 2>&1 >/dev/null && \
+    mv spark /usr/bin/
 
 #setting spark env
 ENV SPARK_HOME /usr/bin/spark
@@ -97,7 +99,7 @@ ENV PATH $PATH:/usr/bin/spark/bin
 COPY spark-defaults.conf /usr/bin/spark/conf/
 
 #Installing apache toree
-RUN jupyter toree install --spark_home=/usr/bin/spark/ --interpreters=Scala,PySpark,SparkR,SQL
+RUN jupyter toree install --interpreters=Scala,PySpark,SparkR,SQL
 
 COPY gpu-enabler_2.11-1.0.0.jar gpu-enabler-examples_2.11-1.0.0.jar /usr/bin/spark/jars/
 

@@ -19,7 +19,7 @@ $ docker build -t <Zeppelin_image_name> -f Dockerfile.Zeppelin .
 
 ## Running juypter image 
 ```
- $ docker run -it --rm -p 9999:9999 <jupyter_image_name>
+ $ docker run -it --device /dev/nvidia0:/dev/nvidia0 --device /dev/nvidiactl:/dev/nvidiactl --device /dev/nvidia-uvm:/dev/nvidia-uvm --rm -v <path>/GPUEnablerDocker/Resources:/home/testuser/GPUEnabler/Resources/:rw -p 9999:9999 <jupyter_image_name>
 ```
 You can access the jupyter daemon from browser using: http://ip_address:9999
 

@@ -76,6 +76,19 @@ RUN jupyter toree install --spark_home=/usr/bin/spark/ --interpreters=Scala,PySp
 
 COPY gpu-enabler_2.11-1.0.0.jar gpu-enabler-examples_2.11-1.0.0.jar /usr/bin/spark/jars/
 
+COPY nvidia-driver-local-repo-ubuntu1604_375.66-1_ppc64el.deb /GPUEnabler/
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    vim \
+    sudo \
+    apt-utils
+
+RUN dpkg -i nvidia-driver-local-repo-ubuntu1604_375.66-1_ppc64el.deb
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    initramfs-tools \
+    cuda-runtime-8.0 \
+    cuda
+
 ENV NB_USER testuser
 ENV NB_UID 1000
 ENV HOME /home/$NB_USER
@@ -83,9 +96,10 @@ ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
-RUN useradd -m -s /bin/bash -N -u $NB_UID $NB_USER  
+RUN useradd -m -s /bin/bash -N -u $NB_UID $NB_USER
+RUN usermod -aG sudo $NB_USER
 
-RUN mkdir $HOME/GPUEnabler 
+RUN mkdir $HOME/GPUEnabler
 
 USER $NB_USER
 RUN mkdir $HOME/GPUEnabler/Resources/

@@ -69,9 +69,6 @@ RUN pip --no-cache-dir install \
  && \
  python -m octave_kernel.install
 
-#copying GPUEnabler jars
-COPY gpu-enabler_2.11-1.0.0.jar gpu-enabler-examples_2.11-1.0.0.jar /usr/bin/spark/jars/
-
 #copying nvidia driver local repo
 COPY nvidia-driver-local-repo-ubuntu1604_375.66-1_ppc64el.deb /GPUEnabler/
 
@@ -101,6 +98,7 @@ COPY spark-defaults.conf /usr/bin/spark/conf/
 #Installing apache toree
 RUN jupyter toree install --interpreters=Scala,PySpark,SparkR,SQL
 
+#copying GPUEnabler jars
 COPY gpu-enabler_2.11-1.0.0.jar gpu-enabler-examples_2.11-1.0.0.jar /usr/bin/spark/jars/
 
 ENV NB_USER testuser

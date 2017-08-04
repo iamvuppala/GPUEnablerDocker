@@ -113,13 +113,15 @@ RUN useradd -m -s /bin/bash -N -u $NB_UID $NB_USER
 RUN usermod -aG sudo $NB_USER
 
 RUN mkdir $HOME/GPUEnabler
+RUN chmod -R 777 $HOME
 
+RUN rm -rf $HOME/GPUEnabler/Resources/
 #switching to testuser and setting up env
 USER $NB_USER
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
-RUN mkdir $HOME/GPUEnabler/Resources/
+RUN mkdir -p $HOME/GPUEnabler/Resources/
 WORKDIR $HOME/GPUEnabler/Resources/
 ENV LD_LIBRARY_PATH /usr/lib/nvidia-361/
 

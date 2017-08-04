@@ -99,7 +99,7 @@ COPY spark-defaults.conf /usr/bin/spark/conf/
 RUN jupyter toree install --interpreters=Scala,PySpark,SparkR,SQL
 
 #copying GPUEnabler jars
-COPY gpu-enabler_2.11-1.0.0.jar gpu-enabler-examples_2.11-1.0.0.jar /usr/bin/spark/jars/
+# COPY gpu-enabler_2.11-1.0.0.jar gpu-enabler-examples_2.11-1.0.0.jar /usr/bin/spark/jars/
 
 ENV NB_USER testuser
 ENV NB_UID 1000
